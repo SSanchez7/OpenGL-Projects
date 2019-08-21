@@ -14,6 +14,7 @@ class Controller:
         self.av1 = 0.0
         self.av2 = 0.0
         self.av3 = 0.0
+        self.av4 = 0.0
         self.fillPolygon = True
 controller=Controller()
 
@@ -21,10 +22,16 @@ controller=Controller()
 def on_key(window, key, scancode, action, mods):
     global controller
     if action == glfw.REPEAT or action ==glfw.PRESS:
-        if key == glfw.KEY_SPACE:
+        if key == glfw.KEY_RIGHT:
             controller.av1-=0.04
-            controller.av2-=0.02
-            controller.av3-=0.01
+            controller.av2-=0.025
+            controller.av3-=0.015
+            controller.av4-=0.01
+        elif key == glfw.KEY_LEFT:
+            controller.av1+=0.04
+            controller.av2+=0.025
+            controller.av3+=0.015
+            controller.av4+=0.01
         if action != glfw.PRESS:
             return
         elif key == glfw.KEY_1:
@@ -137,9 +144,10 @@ def main():
 
     glClearColor(0.85, 0.85, 0.85, 1.0)
 
-    f1=np.array([escena([1, 0, 1],[0,-0.5]), escena([1, 0, 1],[2,-0.5])])
-    f2=np.array([escena([0, 1, 1],[0,   0]), escena([0, 1, 1],[2,   0])])
-    f3=np.array([escena([1, 1, 0],[0, 0.5]), escena([1, 1, 0],[2, 0.5])])
+    f1=np.array([escena([1, 0, 1],[0,-0.66]), escena([1, 0, 1],[2,-0.66]), escena([1, 0, 1],[-2,-0.66])])
+    f2=np.array([escena([0, 1, 1],[0,-0.33]), escena([0, 1, 1],[2,-0.33]), escena([0, 1, 1],[-2,-0.33])])
+    f3=np.array([escena([1, 1, 0],[0, 0.33]), escena([1, 1, 0],[2, 0.33]), escena([1, 1, 0],[-2, 0.33])])
+    f4=np.array([escena([1, 1, 1],[0, 0.66]), escena([1, 1, 1],[2, 0.66]), escena([1, 1, 1],[-2, 0.66])])
 
     while not glfw.window_should_close(window):
         glfw.poll_events()
@@ -150,22 +158,38 @@ def main():
 
         glClear(GL_COLOR_BUFFER_BIT)
         
+        t4 = tr.translate(controller.av4, 0, 0)
         t3 = tr.translate(controller.av3, 0, 0)
         t2 = tr.translate(controller.av2, 0, 0)
         t1 = tr.translate(controller.av1, 0, 0)
 
-        if controller.av1<=-2:
+        if abs(controller.av1)>2:
             controller.av1=0
-        if controller.av2<=-2:
+        if abs(controller.av2)>2:
             controller.av2=0
-        if controller.av3<=-2:
+        if abs(controller.av3)>2:
             controller.av3=0
+        if abs(controller.av4)>2:
+            controller.av4=0
 
-        for i in range(2):
-            drawShape(shaderProgram, f3[i], t3)
-            drawShape(shaderProgram, f2[i], t2)
-            drawShape(shaderProgram, f1[i], t1)
+        drawShape(shaderProgram, f4[0], t4)
+        drawShape(shaderProgram, f4[1], t4)
+        drawShape(shaderProgram, f4[2], t4)
+        
+        drawShape(shaderProgram, f3[0], t3)
+        drawShape(shaderProgram, f3[1], t3)
+        drawShape(shaderProgram, f3[2], t3)
 
+        drawShape(shaderProgram, f2[0], t2)
+        drawShape(shaderProgram, f2[1], t2)
+        drawShape(shaderProgram, f2[2], t2)
+        
+        drawShape(shaderProgram, f1[0], t1)
+        drawShape(shaderProgram, f1[1], t1)
+        drawShape(shaderProgram, f1[2], t1)
+
+
+        print(controller.av1)
 
         glfw.swap_buffers(window)
     glfw.terminate()
