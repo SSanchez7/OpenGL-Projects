@@ -3,10 +3,13 @@ import glfw
 from OpenGL.GL import *
 import OpenGL.GL.shaders
 import numpy as np
-import transformations as tr
 import sys
 
-INT_BYTES = 4
+import transformations as tr
+import scene_graph as sg
+import easy_shaders as es
+from shapes import *
+
 
 ##VARIBABLS GLOBALES (CONTROLLER)##
 class Controller:
@@ -23,15 +26,15 @@ def on_key(window, key, scancode, action, mods):
     global controller
     if action == glfw.REPEAT or action ==glfw.PRESS:
         if key == glfw.KEY_RIGHT:
-            controller.av1-=0.04
-            controller.av2-=0.025
-            controller.av3-=0.015
-            controller.av4-=0.01
+            controller.av1-=0.008
+            controller.av2-=0.015
+            controller.av3-=0.025
+            controller.av4-=0.04
         elif key == glfw.KEY_LEFT:
-            controller.av1+=0.04
-            controller.av2+=0.025
-            controller.av3+=0.015
-            controller.av4+=0.01
+            controller.av1+=0.001
+            controller.av2+=0.008
+            controller.av3+=0.018
+            controller.av4+=0.033
         if action != glfw.PRESS:
             return
         elif key == glfw.KEY_1:
@@ -42,56 +45,31 @@ def on_key(window, key, scancode, action, mods):
             print("Unknow key")
 
 ##GPUSHAPE##
-class GPUShape:
-    def __init__(self):
-        self.vao = 0
-        self.vbo = 0
-        self.ebo = 0
-        self.texture = 0
-        self.size = 0
 
 ##FUNCION DIBUJAR (DRAWSHAPE)##
-def drawShape(shaderProgram, shape, transform):
-    glBindVertexArray(shape.vao)
-    glBindBuffer(GL_ARRAY_BUFFER, shape.vbo)
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, shape.ebo)
-    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "transform"), 1, GL_TRUE, transform)
-    position = glGetAttribLocation(shaderProgram, "position")
-    glVertexAttribPointer(position, 3, GL_FLOAT, GL_FALSE, 24, ctypes.c_void_p(0))
-    glEnableVertexAttribArray(position)
-    color = glGetAttribLocation(shaderProgram, "color")
-    glVertexAttribPointer(color, 3, GL_FLOAT, GL_FALSE, 24, ctypes.c_void_p(12))
-    glEnableVertexAttribArray(color)
-    glDrawElements(GL_TRIANGLES, shape.size, GL_UNSIGNED_INT, None)
 
 ##FUNCIONES DE CREACION DE FIGURAS##
-def escena(color, inicio):
-    gpuShape = GPUShape()
+def escena():
+    mapa = np.array([es.toGPUShape(quad([1, 1, 1],[0, 0.66])),
+					 es.toGPUShape(quad([1, 1, 0],[0, 0.33])),
+					 es.toGPUShape(quad([0, 1, 1],[0,-0.33])),
+					 es.toGPUShape(quad([1, 0, 1],[0,-0.66])),])
 
-    vertexData = np.array([
-        inicio[0]-0.5, inicio[1]-0.5, 0.0, color[0], color[1], color[2],
-        inicio[0]+0.5, inicio[1]-0.5, 0.0, color[0], color[1], color[2],
-        inicio[0]+0.5, inicio[1]+0.5, 0.0, color[0], color[1], color[2],
-        inicio[0]-0.5, inicio[1]+0.5, 0.0, color[0], color[1], color[2]
+    escena = sg.SceneGraphNode("escena")
+    baseName="mapa"
+    for i in range(len(mapa)):
+    	firstNode = sg.SceneGraphNode("capa"+str(i+1))
+    	for j in range(3):
+    		p=-1 if j==0 else 0 if j==1 else +1
+    		secondNode = sg.SceneGraphNode(baseName+str(i+1)+str(p))
+    		secondNode.transform = tr.translate(2*p,0,0)
+    		secondNode.childs += [mapa[i]]
+    		firstNode.childs += [secondNode]
+    	escena.childs += [firstNode]
     
-    ], dtype=np.float32)
-
-    indices = np.array(
-        [0, 1, 2,
-         2, 3, 0], dtype=np.uint32)
-
-    gpuShape.size = len(indices)
-
-    gpuShape.vao = glGenVertexArrays(1)
-    gpuShape.vbo = glGenBuffers(1)
-    gpuShape.ebo = glGenBuffers(1)
-
-    glBindBuffer(GL_ARRAY_BUFFER, gpuShape.vbo)
-    glBufferData(GL_ARRAY_BUFFER, len(vertexData) * INT_BYTES, vertexData, GL_STATIC_DRAW)
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gpuShape.ebo)
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, len(indices) * INT_BYTES, indices, GL_STATIC_DRAW)
-
-    return gpuShape
+    escena.childs += [vehiculo()]
+    
+    return escena
 
 ##OPENGL MAIN##
 def main():
@@ -107,47 +85,17 @@ def main():
 
     glfw.set_key_callback(window, on_key)
 
-    ##SHADERS##
-    vertex_shader = """
-    #version 130
-    in vec3 position;
-    in vec3 color;
+    pipeline = es.SimpleTransformShaderProgram()
 
-    out vec3 fragColor;
-
-    uniform mat4 transform;
-
-    void main()
-    {
-        fragColor = color;
-        gl_Position = transform * vec4(position, 1.0f);
-    }
-    """
-
-    fragment_shader = """
-    #version 130
-
-    in vec3 fragColor;
-    out vec4 outColor;
-
-    void main()
-    {
-        outColor = vec4(fragColor, 1.0f);
-    }
-    """
+    ##SHADERS## 
 
     ##DECLARACION DEL PIPELINE##
-    shaderProgram = OpenGL.GL.shaders.compileProgram(
-        OpenGL.GL.shaders.compileShader(vertex_shader, GL_VERTEX_SHADER),
-        OpenGL.GL.shaders.compileShader(fragment_shader, GL_FRAGMENT_SHADER))
-    glUseProgram(shaderProgram)
+
+    glUseProgram(pipeline.shaderProgram)
 
     glClearColor(0.85, 0.85, 0.85, 1.0)
 
-    f1=np.array([escena([1, 0, 1],[0,-0.66]), escena([1, 0, 1],[2,-0.66]), escena([1, 0, 1],[-2,-0.66])])
-    f2=np.array([escena([0, 1, 1],[0,-0.33]), escena([0, 1, 1],[2,-0.33]), escena([0, 1, 1],[-2,-0.33])])
-    f3=np.array([escena([1, 1, 0],[0, 0.33]), escena([1, 1, 0],[2, 0.33]), escena([1, 1, 0],[-2, 0.33])])
-    f4=np.array([escena([1, 1, 1],[0, 0.66]), escena([1, 1, 1],[2, 0.66]), escena([1, 1, 1],[-2, 0.66])])
+    nuevaEscena=escena()
 
     while not glfw.window_should_close(window):
         glfw.poll_events()
@@ -157,39 +105,23 @@ def main():
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
 
         glClear(GL_COLOR_BUFFER_BIT)
-        
-        t4 = tr.translate(controller.av4, 0, 0)
-        t3 = tr.translate(controller.av3, 0, 0)
-        t2 = tr.translate(controller.av2, 0, 0)
-        t1 = tr.translate(controller.av1, 0, 0)
 
-        if abs(controller.av1)>2:
-            controller.av1=0
-        if abs(controller.av2)>2:
-            controller.av2=0
-        if abs(controller.av3)>2:
-            controller.av3=0
         if abs(controller.av4)>2:
-            controller.av4=0
+        	controller.av4=0
+        if abs(controller.av3)>2:
+        	controller.av3=0
+       	if abs(controller.av2)>2:
+        	controller.av2=0
+       	if abs(controller.av1)>2:
+        	controller.av1=0
 
-        drawShape(shaderProgram, f4[0], t4)
-        drawShape(shaderProgram, f4[1], t4)
-        drawShape(shaderProgram, f4[2], t4)
+        sg.findNode(nuevaEscena, "capa1").transform = tr.translate(controller.av1, 0,0)
+        sg.findNode(nuevaEscena, "capa2").transform = tr.translate(controller.av2, 0,0)
+        sg.findNode(nuevaEscena, "capa3").transform = tr.translate(controller.av3, 0,0)
+        sg.findNode(nuevaEscena, "capa4").transform = tr.translate(controller.av4, 0,0)
         
-        drawShape(shaderProgram, f3[0], t3)
-        drawShape(shaderProgram, f3[1], t3)
-        drawShape(shaderProgram, f3[2], t3)
+        sg.drawSceneGraphNode(nuevaEscena, pipeline, "transform")
 
-        drawShape(shaderProgram, f2[0], t2)
-        drawShape(shaderProgram, f2[1], t2)
-        drawShape(shaderProgram, f2[2], t2)
-        
-        drawShape(shaderProgram, f1[0], t1)
-        drawShape(shaderProgram, f1[1], t1)
-        drawShape(shaderProgram, f1[2], t1)
-
-
-        print(controller.av1)
 
         glfw.swap_buffers(window)
     glfw.terminate()
