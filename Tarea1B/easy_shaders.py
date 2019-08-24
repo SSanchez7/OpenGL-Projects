@@ -450,3 +450,45 @@ class SimpleTextureModelViewProjectionShaderProgram:
         # Render the active element buffer with the active shader program
         glDrawElements(mode, shape.size, GL_UNSIGNED_INT, None)
 
+
+class SimpleTransformShaderProgramNight:
+
+    def __init__(self):
+
+        vertex_shader = """
+            #version 130
+            
+            uniform mat4 transform;
+
+            in vec3 position;
+            in vec3 color;
+
+            out vec3 newColor;
+
+            void main()
+            {
+                gl_Position = transform * vec4(position, 1.0f);
+                newColor = color;
+            }
+            """
+
+        fragment_shader_night = """
+   			#version 130
+
+    		in vec3 newColor;
+		    out vec4 outColor;
+
+    		void main()
+    		{
+        		outColor = vec4(newColor.r * 0.2, newColor.g * 0.2, (newColor.b + 0.2) * 0.5, 1.0f);
+    		}
+    		"""
+
+        self.shaderProgram = OpenGL.GL.shaders.compileProgram(
+            OpenGL.GL.shaders.compileShader(vertex_shader, OpenGL.GL.GL_VERTEX_SHADER),
+            OpenGL.GL.shaders.compileShader(fragment_shader_night, OpenGL.GL.GL_FRAGMENT_SHADER))
+
+
+    
+
+    
