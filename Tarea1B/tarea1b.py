@@ -8,7 +8,8 @@ import sys
 import transformations as tr
 import scene_graph as sg
 import easy_shaders as es
-from shapes import *
+from autoShape import *
+from capasShape import *
 
 
 ##VARIBABLS GLOBALES (CONTROLLER)##
@@ -23,11 +24,16 @@ class Controller:
         self.theta = 0.0
         self.rotate = 0
         self.time = 0
+        self.transicion = 0
+        self.light = False
+        self.special = False
 controller=Controller()
-theta=0
+
 ##CAMBIOS AL TECLEAR (ON_KEY)##
 def on_key(window, key, scancode, action, mods):
     global controller
+
+
     if action == glfw.REPEAT or action ==glfw.PRESS:
         if key == glfw.KEY_RIGHT:
             controller.time += 0.1
@@ -46,10 +52,15 @@ def on_key(window, key, scancode, action, mods):
     else:
         controller.time = 0
         controller.rotate = 0
+
     if action != glfw.PRESS:
         return
-    elif key == glfw.KEY_1:
+    elif key == glfw.KEY_SPACE:
         controller.fillPolygon = not controller.fillPolygon
+    elif key == glfw.KEY_1:
+        controller.light = not controller.light
+    elif key == glfw.KEY_2:
+        controller.special = not controller.special
     elif key == glfw.KEY_ENTER:
         controller.shader_to_use = not controller.shader_to_use 
         print("Toggle shader program")
@@ -67,7 +78,7 @@ def escena():
 	mapa = np.array([es.toGPUShape(createQuad([1, 1, 1],[0, 0.66])),
 					 es.toGPUShape(createQuad([1, 1, 0],[0, 0.33])),
 					 es.toGPUShape(createQuad([0, 1, 1],[0,-0.33])),
-					 es.toGPUShape(createQuad([1, 0, 1],[0,-0.66])),])
+					 capa1()])
 
 	escena = sg.SceneGraphNode("escena")
 	baseName="mapa"
@@ -81,16 +92,18 @@ def escena():
 			firstNode.childs += [secondNode]
 		escena.childs += [firstNode]
 
-	escena.childs += [vehiculo()]
+	escena.childs += [vehiculo([87/255, 98/255, 112/255])]
+
+
 
 	return escena
 
-##OPENGL MAIN##
+##OPENGL MAIN##   
 def main():
     if not glfw.init():
         sys.exit()
-    width = 600
-    height = 600
+    width = 700
+    height = 700
     window = glfw.create_window(width,height,"Drawing", None, None)
     if not window:
         glfw.terminate()
@@ -108,6 +121,13 @@ def main():
 
     
     glClearColor(0.85, 0.85, 0.85, 1.0)
+
+    def timeLapse(condicion):
+        if condicion and controller.transicion<=1:
+            controller.transicion += 0.025
+        elif not condicion and controller.transicion >=0:
+            controller.transicion -= 0.025
+
 
     nuevaEscena=escena()
 
@@ -145,14 +165,35 @@ def main():
             controller.theta -= 0.25*(controller.time**2)/2 if controller.time<=0.5 else 3*dt
         if controller.rotate==-1:
             controller.theta += 0.25*(controller.time**2)/2 if controller.time<=0.5 else 1.5*dt
+        
+        #Movimiento especial secreto
+        
+        timeLapse(controller.special)
+        
+        
+        #SpecialController
+        specialScaleShadowLight = 1-controller.transicion*0.5-int(controller.special)*0.2*np.sin(2*controller.theta)
+        #specialScaleBar = controller.transicion*4+int(controller.special)*np.sin(2*controller.theta)
 
+        specialTranslateCar = controller.transicion*0.5+(int(controller.special)*0.05+int(not controller.special)*0.004)*np.sin(2*controller.theta)
+        specialScaleWheel = 1+controller.transicion*0.5
+        specialTranslateWhell = -0.2+controller.transicion*0.5+int(controller.special)*0.05*np.sin(2*controller.theta)
+        
+        sg.findNode(nuevaEscena, "sombra").transform = tr.matmul([tr.translate(0.1,-0.28,0),tr.shearing(1.3,0,0,0,0,0),tr.scale(1.4,0.1,1),tr.uniformScale(specialScaleShadowLight)])
+        sg.findNode(nuevaEscena, "luzPiso").transform = tr.matmul([tr.translate(2,int(not controller.light)*3-0.23,0), tr.scale(2,0.25,1), tr.uniformScale(specialScaleShadowLight)])
+        sg.findNode(nuevaEscena, "carroceria").transform = tr.translate(0, specialTranslateCar , 0)
+        
         sg.findNode(nuevaEscena, "capa1").transform = tr.translate(controller.av1, 0,0)
         sg.findNode(nuevaEscena, "capa2").transform = tr.translate(controller.av2, 0,0)
         sg.findNode(nuevaEscena, "capa3").transform = tr.translate(controller.av3, 0,0)
         sg.findNode(nuevaEscena, "capa4").transform = tr.translate(controller.av4, 0,0)
-        sg.findNode(nuevaEscena, "ruedaTrasera").transform = tr.matmul([tr.translate(-0.4, -0.2, 0), tr.rotationZ(controller.theta)])
-        sg.findNode(nuevaEscena, "ruedaDelantera").transform = tr.matmul([tr.translate(0.5, -0.2, 0), tr.rotationZ(controller.theta)])
 
+        sg.findNode(nuevaEscena, "pulso").transform = tr.translate(0, controller.transicion*0.1+int(controller.special)*0.05*np.sin(2*controller.theta), 0)
+
+        sg.findNode(nuevaEscena, "ruedaTrasera").transform = tr.matmul([tr.translate(-0.4, specialTranslateWhell, 0),tr.scale(specialScaleWheel,1-controller.transicion*0.5,1), tr.rotationZ(int(not controller.special)*controller.theta)])
+        sg.findNode(nuevaEscena, "ruedaDelantera").transform = tr.matmul([tr.translate(0.5, specialTranslateWhell, 0),tr.scale(specialScaleWheel,1-controller.transicion*0.5,1), tr.rotationZ(int(not controller.special)*controller.theta)])
+        #sg.findNode(nuevaEscena, "special").transform = tr.matmul([tr.translate(0,0.1,0),tr.scale(1,specialScaleBar,1)])
+        
         sg.drawSceneGraphNode(nuevaEscena, pipeline, "transform")
 
 
