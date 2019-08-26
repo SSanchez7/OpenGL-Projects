@@ -8,12 +8,13 @@ import scene_graph as sg
 import easy_shaders as es
 import basic_shapes as bs
 import transformations as tr
+from capasShape import *
 
 def createPiezaTrasera(color):
 	vertexData = np.array([
-		 1.5,  2.5, 0, color[0], color[1], color[2], 
-		 0.5,  2.5, 0, color[0], color[1], color[2], 
-		-2.5,  1.5, 0, color[0], color[1], color[2], 
+		 1.5,  2.5, 0, color[0]-0.05, color[1]-0.05, color[2]-0.05,
+		 0.5,  2.5, 0, color[0]-0.05, color[1]-0.05, color[2]-0.05,
+		-2.5,  1.5, 0, color[0]-0.05, color[1]-0.05, color[2]-0.05,
 		 -3 , -0.5, 0, color[0], color[1], color[2], 
 		-1.5, -1.5, 0, color[0], color[1], color[2], 
 		-1  , -0.5, 0, color[0], color[1], color[2], 
@@ -39,15 +40,15 @@ def createPiezaTrasera(color):
 
 def createPiezaCentral(color):
 	vertexData = np.array([
-		 0.5,   2, 0, color[0], color[1], color[2], 
-		-2.5,   2, 0, color[0], color[1], color[2], 
+		 0.5,   2, 0, color[0]-0.05, color[1]-0.05, color[2]-0.05, 
+		-2.5,   2, 0, color[0]-0.05, color[1]-0.05, color[2]-0.05, 
 		-2.9, 0.2, 0, color[0], color[1], color[2], 
 		-1.5,  -2, 0, color[0], color[1], color[2], 
 		   2,  -2, 0, color[0], color[1], color[2], 
 		   3, 0.5, 0, color[0], color[1], color[2], 
 		  -2, 2.5, 0, color[0], color[1], color[2], 
 		   1,   3, 0, color[0], color[1], color[2], 
-		 3.5,   2, 0, color[0], color[1], color[2], ], dtype=np.float32)
+		 3.5,   2, 0, color[0], color[1], color[2]], dtype=np.float32)
 	indice = np.array(
 		[0, 5, 4,
 		 0, 4, 3,
@@ -66,8 +67,8 @@ def createPiezaDelantera(color):
 		 1.5, -1.5, 0, color[0], color[1], color[2], 
 		   3, -1.5, 0, color[0], color[1], color[2], 
 		   4, -0.5, 0, color[0], color[1], color[2], 
-		 3.5,    1, 0, color[0], color[1], color[2], 
-		   2,    2, 0, color[0], color[1], color[2], 
+		 3.5,    1, 0, color[0]+0.1, color[1]+0.1, color[2]+0.1, 
+		   2,    2, 0, color[0]+0.1, color[1]+0.1, color[2]+0.1, 
 		-1.5,  2.5, 0, color[0], color[1], color[2], 
 		  -2,    1, 0, color[0], color[1], color[2], 
 		-2.7, -0.5, 0, color[0], color[1], color[2], 
@@ -87,6 +88,8 @@ def createPiezaDelantera(color):
 		 3, 2, 1], dtype=np.uint32)
 	return bs.Shape(vertexData,indices)
 
+##VEHICULO: CARROCERIA, RUEDAS, SOMBRA, LUZPISO, PULSO
+		  ##CARROCERIA: Partes (TRASERA, CENTRAL, DELANTERA), VENTANAS, DISEÑO, SOMBRARUEDA, FOCOAUTO
 def vehiculo(color):
 	parte1 = es.toGPUShape(createPiezaTrasera(color))
 	parte2 = es.toGPUShape(createPiezaCentral(color))
@@ -101,21 +104,14 @@ def vehiculo(color):
 	piezaC = sg.SceneGraphNode("piezaCentral")
 	piezaC.transform = tr.uniformScale(0.1)
 	piezaC.childs += [parte2]
-	
+
 	piezaD = sg.SceneGraphNode("piezaDelantera")
 	piezaD.transform = tr.matmul([tr.translate(0.5,-0.05,0),tr.uniformScale(0.1)])
 	piezaD.childs += [parte3]
 
-	piezaBI = sg.SceneGraphNode("piezaBajoIzq")
-	piezaBI.transform = tr.matmul([tr.translate(-0.4,-0.2,0), tr.rotationZ(99*np.pi/180), tr.uniformScale(0.6)])
-	piezaBI.childs += [semiCircle(20, 0.08, [0.02, 0.02, 0.02])]
-	piezaBD = sg.SceneGraphNode("piezaBajoIzq")
-	piezaBD.transform = tr.matmul([tr.translate(0.5,-0.2,0), tr.rotationZ(99*np.pi/180), tr.uniformScale(0.6)])
-	piezaBD.childs += [semiCircle(20, 0.08, [0.02, 0.02, 0.02])]
-
-	foco = sg.SceneGraphNode("foco")
-	foco.transform = tr.matmul([tr.translate(0.84,-0.05,0), tr.shearing(-0.3,0,0,0,0,0), tr.scale(0.07,0.14,0.1)])
-	foco.childs += [luz]
+	focoAuto = sg.SceneGraphNode("focoAuto")
+	focoAuto.transform = tr.matmul([tr.translate(0.84,-0.05,0), tr.shearing(-0.3,0,0,0,0,0), tr.scale(0.07,0.14,0.1)])
+	focoAuto.childs += [luz]
 
 	luzPiso = sg.SceneGraphNode("luzPiso")
 	luzPiso.childs += [circle(20,0.1,[0.5,0.5,0.5])]
@@ -129,41 +125,49 @@ def vehiculo(color):
 
 	ruedaTrasera = sg.SceneGraphNode("ruedaTrasera")
 	ruedaTrasera.childs += [rueda()]
-
 	ruedaDelantera = sg.SceneGraphNode("ruedaDelantera")
 	ruedaDelantera.childs += [rueda()]
+	ruedas = sg.SceneGraphNode("ruedas")
+	ruedas.childs += [ruedaTrasera]
+	ruedas.childs += [ruedaDelantera]
 
+	piezaBI = sg.SceneGraphNode("piezaBajoIzq")
+	piezaBI.transform = tr.matmul([tr.translate(-0.4,-0.2,0), tr.rotationZ(99*np.pi/180), tr.uniformScale(0.6)])
+	piezaBI.childs += [semiCircle(20, 0.08, [0.02, 0.02, 0.02])]
+	piezaBD = sg.SceneGraphNode("piezaBajoDer")
+	piezaBD.transform = tr.matmul([tr.translate(0.5,-0.2,0), tr.rotationZ(99*np.pi/180), tr.uniformScale(0.6)])
+	piezaBD.childs += [semiCircle(20, 0.08, [0.02, 0.02, 0.02])]
 	ruedaSombra1 = sg.SceneGraphNode("ruedaSombra1")
 	ruedaSombra1.transform = tr.translate(0.6,-0.14,0)
 	ruedaSombra1.childs += [circle(20, 0.034, [0.01, 0.01, 0.01])]
 	ruedaSombra2 = sg.SceneGraphNode("ruedaSombra2")
 	ruedaSombra2.transform = tr.translate(-0.3,-0.14,0)
 	ruedaSombra2.childs += [circle(20, 0.034, [0.01, 0.01, 0.01])]
+	ruedaSombra = sg.SceneGraphNode("ruedaSombra")
+	ruedaSombra.childs += [ruedaSombra1]
+	ruedaSombra.childs += [ruedaSombra2]
+	ruedaSombra.childs += [piezaBI]
+	ruedaSombra.childs += [piezaBD]
 
 	sombra = sg.SceneGraphNode("sombra")
 	sombra.childs += [grayQuad]
 
 	carroceria = sg.SceneGraphNode("carroceria")
-	carroceria.childs += [ruedaSombra1]
-	carroceria.childs += [ruedaSombra2]
-	carroceria.childs += [piezaBI]
-	carroceria.childs += [piezaBD]
+	carroceria.childs += [ruedaSombra]
 	carroceria.childs += [piezaT]
 	carroceria.childs += [piezaC]
 	carroceria.childs += [piezaD]
 	carroceria.childs += [ventanas()]
 	carroceria.childs += [diseño(color)]
-	carroceria.childs += [foco]
-	
+	carroceria.childs += [focoAuto]
 
 	vehiculo = sg.SceneGraphNode("vehiculo")
-	vehiculo.transform = tr.matmul([tr.translate(-0.4,-0.4,0), tr.uniformScale(0.7)])
+	vehiculo.transform = tr.matmul([tr.translate(-0.4,-0.6,0), tr.uniformScale(0.7)])
 
 	vehiculo.childs += [sombra]
 	vehiculo.childs += [pulso]
 	vehiculo.childs += [carroceria]
-	vehiculo.childs += [ruedaTrasera]
-	vehiculo.childs += [ruedaDelantera]
+	vehiculo.childs += [ruedas]
 	vehiculo.childs += [luzPiso]
 	
 	return vehiculo
@@ -206,18 +210,18 @@ def rueda():
 	blackCircle = circle(20, 0.08, [0.05, 0.05, 0.05])
 	line = es.toGPUShape(createLine([0.2,0.2,0.2]))
 
-	ruedaAtras = sg.SceneGraphNode("ruedaAtras")
-	ruedaAtras.transform = tr.uniformScale(1)
-	ruedaAtras.childs += [blackCircle]
+	neumatico = sg.SceneGraphNode("neumatico")
+	neumatico.transform = tr.uniformScale(1)
+	neumatico.childs += [blackCircle]
 
-	ruedaFrente = sg.SceneGraphNode("ruedaFrente")
-	ruedaFrente.transform = tr.uniformScale(0.65)
-	ruedaFrente.childs += [grayCircle]
+	llanta = sg.SceneGraphNode("llanta")
+	llanta.transform = tr.uniformScale(0.65)
+	llanta.childs += [grayCircle]
 
 	rueda = sg.SceneGraphNode("rueda")
 	rueda.transform = tr.uniformScale(0.5)
-	rueda.childs += [ruedaAtras]
-	rueda.childs += [ruedaFrente]
+	rueda.childs += [neumatico]
+	rueda.childs += [llanta]
 
 	for i in range(6):
 		lineas = sg.SceneGraphNode("linea")
@@ -227,7 +231,7 @@ def rueda():
 	return rueda
 
 def ventanas():
-	quad = es.toGPUShape(createQuad([0.08, 0.08, 0.08]))
+	quad = es.toGPUShape(bs.createColorQuad(0.08, 0.08, 0.08))
 	triangulo = es.toGPUShape(createTriangle([0.08, 0.08, 0.08]))
 
 	ventanaFrente = sg.SceneGraphNode("ventanaFrente")
@@ -279,19 +283,19 @@ def diseño(color):
 	l4.transform = tr.matmul([tr.translate(-0.21,-0.07,0),tr.rotationZ(120*np.pi/180),tr.scale(0.25,0.15,1)])
 	l4.childs += [grayLine]
 
-	l5 = sg.SceneGraphNode("UpLine")
+	l5 = sg.SceneGraphNode("UpLine1")
 	l5.transform = tr.matmul([tr.translate(0.2,0.15,0),tr.rotationZ(155*np.pi/180),tr.scale(0.3,0.15,1)])
 	l5.childs += [grayLine]
 
-	l6= sg.SceneGraphNode("OnLine")
+	l6= sg.SceneGraphNode("OnLine2")
 	l6.transform = tr.matmul([tr.translate(-0.07,0.19,0),tr.rotationZ(10*np.pi/180),tr.scale(0.28,0.15,1)])
 	l6.childs += [grayLine]
 
-	l7 = sg.SceneGraphNode("UpLine")
+	l7 = sg.SceneGraphNode("UpLine3")
 	l7.transform = tr.matmul([tr.translate(-0.24,0.1,0),tr.rotationZ(65*np.pi/180),tr.scale(0.15,0.15,1)])
 	l7.childs += [grayLine]
 
-	l8 = sg.SceneGraphNode("UpLine")
+	l8 = sg.SceneGraphNode("UpLine4")
 	l8.transform = tr.matmul([tr.translate(0.55,0.06,0),tr.rotationZ(-8*np.pi/180),tr.scale(0.5,0.15,1)])
 	l8.childs += [grayLine]
 
@@ -333,8 +337,8 @@ def createTriangle2(n, d, color):
 	p=d/(2*np.tan(alpha))
 	vertexData = np.array([
 	       0,  0, 0, color[0], color[1], color[2],
-		 d/2, -p, 0, color[0], color[1], color[2],
-		-d/2, -p, 0, color[0], color[1], color[2]], dtype=np.float32)
+		 d/2, -p, 0, color[0]-0.1, color[1]-0.1, color[2]-0.1,
+		-d/2, -p, 0, color[0]-0.1, color[1]-0.1, color[2]-0.1], dtype=np.float32)
 	indices = np.array(
 	[0, 1, 2], dtype=np.uint32)
 	return bs.Shape(vertexData, indices)
@@ -346,8 +350,8 @@ def createSeccionTriangle(n, d, x, color):
 	vertexData = np.array([
 		 d/2, -p, 0, color[0], color[1], color[2],
 		-d/2, -p, 0, color[0], color[1], color[2],
-		-x/2, -q, 0, color[0], color[1], color[2],
-		 x/2, -q, 0, color[0], color[1], color[2]], dtype=np.float32)
+		-x/2, -q, 0, color[0]-0.8, color[1]-0.8, color[2]-0.8,
+		 x/2, -q, 0, color[0]-0.8, color[1]-0.8, color[2]-0.8], dtype=np.float32)
 	indices = np.array(
 	[0, 1, 2,
 	 2, 3, 0], dtype=np.uint32)
