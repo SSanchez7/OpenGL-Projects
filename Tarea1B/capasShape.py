@@ -67,7 +67,7 @@ def cerca():
 	return cerca
 
 ##CAPA4: FOCO, CERCA, CALLE, PASTO
-def capa4():
+def mapa4():
 	street = es.toGPUShape(createMulticolorQuad([0.25,0.25,0.25],[0.2,0.2,0.2])) 
 	garden = es.toGPUShape(createMulticolorQuad([10/255,50/255,10/255],[22/255,112/255,22/255]))
 	linea = es.toGPUShape(ash.createLine([0.3,0.3,0.3]))
@@ -84,14 +84,14 @@ def capa4():
 	pasto.transform = tr.matmul([tr.translate(0,-0.51,0),tr.scale(2,0.19,1)])
 	pasto.childs += [garden]
 
-	capa4 = sg.SceneGraphNode("capa1")
-	capa4.childs += [calles]
-	capa4.childs += [cerca()]
-	capa4.childs += [pasto]
-	capa4.childs += [division]
-	capa4.childs += [foco()]
+	mapa4 = sg.SceneGraphNode("capa1")
+	mapa4.childs += [calles]
+	mapa4.childs += [cerca()]
+	mapa4.childs += [pasto]
+	mapa4.childs += [division]
+	mapa4.childs += [foco()]
 
-	return capa4
+	return mapa4
 
 def createSemiPuente(color):
 	vertexData = np.array([
@@ -156,8 +156,54 @@ def createSemiPuente(color):
 		 7, 8, 12], dtype=np.uint32)
 	return bs.Shape(vertexData, indices)
 
+def boya(color):
+	quad = es.toGPUShape(createMulticolorQuad([color[0],color[1],color[2]],[color[0]-0.2,color[1]-0.2,color[2]-0.2]))
+	tri = es.toGPUShape(ash.createTriangle([color[0],color[1],color[2]]))
+	linea = es.toGPUShape(ash.createLine([color[0],color[1],color[2]]))
+	refl = es.toGPUShape(createMulticolorQuad([10/255,40/255,60/255],[20/255,90/255,100/255]))
+
+	l1 = sg.SceneGraphNode("l1")
+	l1.transform = tr.matmul([tr.translate(0,0.05,0), tr.rotationZ(90*np.pi/180), tr.scale(0.15,0.08,1)])
+	l1.childs += [linea]
+	l2 = sg.SceneGraphNode("l2")
+	l2.transform = tr.matmul([tr.translate(-0.025,0.05,0), tr.rotationZ(70*np.pi/180), tr.scale(0.15,0.08,1)])
+	l2.childs += [linea]
+	l3 = sg.SceneGraphNode("l3")
+	l3.transform = tr.matmul([tr.translate(0.025,0.05,0), tr.rotationZ(110*np.pi/180), tr.scale(0.15,0.08,1)])
+	l3.childs += [linea]
+
+	baseAlta = sg.SceneGraphNode("baseAlta")
+	baseAlta.transform = tr.identity()
+	baseAlta.childs += [l1]
+	baseAlta.childs += [l2]
+	baseAlta.childs += [l3]
+
+	baseMedia = sg.SceneGraphNode("baseMedia")
+	baseMedia.transform = tr.matmul([tr.translate(0,-0.05,0), tr.scale(0.1,0.1,1)])
+	baseMedia.childs += [quad]
+
+	baseBaja = sg.SceneGraphNode("baseBaja")
+	baseBaja.transform = tr.matmul([tr.translate(0,-0.1,0), tr.scale(0.1,0.1,0.1)])
+	baseBaja.childs += [tri]
+
+	reflejo = sg.SceneGraphNode("reflejoPez")
+	reflejo.transform = tr.matmul([tr.translate(0,-0.29,0), tr.scale(0.1,0.3,1)])
+	reflejo.childs += [refl]
+
+	cuerpo = sg.SceneGraphNode("cuerpoBoya")
+	cuerpo.childs += [baseBaja]
+	cuerpo.childs += [baseMedia]
+	cuerpo.childs += [baseAlta]
+
+	boya = sg.SceneGraphNode("pez")
+	boya.transform = tr.matmul([tr.translate(0,-0.1,0), tr.uniformScale(0.8)])
+	boya.childs += [reflejo]
+	boya.childs += [cuerpo]
+	
+	return boya
+
 ##CAPA3: PUENTE, REFLEJO, LAGO
-def capa3():
+def mapa3():
 	semiP = es.toGPUShape(createSemiPuente([0.2, 0.2, 0.2]))
 	refl = es.toGPUShape(createMulticolorQuad([10/255,40/255,60/255],[20/255,90/255,100/255]))
 	agua = es.toGPUShape(createMulticolorQuad([20/255,90/255,100/255],[1/255,40/255,70/255]))
@@ -189,16 +235,18 @@ def capa3():
 	lago.transform = tr.matmul([tr.translate(0,-0.2,0), tr.scale(2,0.9,1)])
 	lago.childs += [agua]
 
-	capa3 = sg.SceneGraphNode("capa3")
-	capa3.childs += [lago]
-	capa3.childs += [reflejo]
-	capa3.childs += [puente]
+	mapa3 = sg.SceneGraphNode("capa3")
+	mapa3.childs += [lago]
+	mapa3.childs += [reflejo]
+	mapa3.childs += [puente]
+	mapa3.childs += [boya([128/255,4/255,4/255])]
 
 
-	return capa3
+
+	return mapa3
 
 ##CAPA2: ISLAS
-def capa2():
+def mapa2():
 	isla1 = sg.SceneGraphNode("isla1")
 	isla1.transform = tr.matmul([tr.translate(0.3, 0.2, 0), tr.rotationZ(110*np.pi/180)])
 	isla1.childs += [ash.semiCircle(10,0.25,[40/255,90/255,10/255])]
@@ -210,13 +258,46 @@ def capa2():
 	islas.childs += [isla1]
 	islas.childs += [isla2]
 
-	capa2 = sg.SceneGraphNode("capa2")
-	capa2.childs += [islas]
+	mapa2 = sg.SceneGraphNode("capa2")
+	mapa2.childs += [islas]
 
-	return capa2
+	return mapa2
+
+def ave(color):
+	semiC= ash.semiCircle(10,0.08,[color[0],color[2],color[2]])
+	triangle = es.toGPUShape(ash.createTriangle([0,0,0]))
+	quad1 = es.toGPUShape(ash.createMulticolorQuad([color[0],color[1],color[2]],[color[0]-0.2,color[1]-0.2,color[2]-0.2]))
+	quad2 = es.toGPUShape(ash.createMulticolorQuad([color[0]-0.2,color[1]-0.2,color[2]-0.2],[color[0]-0.4,color[1]-0.4,color[2]-0.4]))
+
+	cuerpo = sg.SceneGraphNode("cuerpo")
+	cuerpo.transform = tr.matmul([tr.translate(0,0.7,0), tr.scale(1,0.7,1), tr.rotationZ(-72*np.pi/180)])
+	cuerpo.childs += [semiC]
+
+	cabeza = sg.SceneGraphNode("cabeza")
+	cabeza.transform = tr.matmul([tr.translate(-0.11,0.64,0), tr.scale(0.5,0.5,1), tr.rotationZ(110*np.pi/180)])
+	cabeza.childs += [semiC]
+
+	pico = sg.SceneGraphNode("pico")
+	pico.transform = tr.matmul([tr.translate(-0.17,0.65,0), tr.scale(0.1,0.03,1)])
+	pico.childs += [triangle]
+
+	alaIzquierda = sg.SceneGraphNode("alaIzquierda")
+	alaIzquierda.childs += [quad1]
+	alaDerecha = sg.SceneGraphNode("alaDerecha")
+	alaDerecha.childs += [quad2]
+
+	ave = sg.SceneGraphNode("ave")
+
+	ave.childs += [alaDerecha]
+	ave.childs += [cuerpo]
+	ave.childs += [cabeza]
+	ave.childs += [alaIzquierda]
+	ave.childs += [pico]
+
+	return ave
 
 ##CAPA1: FONDO, ESTRELLAS
-def capa1():
+def mapa1():
 	f = es.toGPUShape(createFondo())
 	tri = es.toGPUShape(ash.createTriangle([1,1,1]))
 	fondo = sg.SceneGraphNode("fondo")
@@ -228,10 +309,10 @@ def capa1():
 		newNode.childs += [tri]
 		estrellas.childs += [newNode]
 
-	background = sg.SceneGraphNode("background")
-	background.childs += [fondo]
-	background.childs += [estrellas]
-	return background
+	mapa1 = sg.SceneGraphNode("background")
+	mapa1.childs += [fondo]
+	mapa1.childs += [estrellas]
+	return mapa1
 
 def createFondo():
 	azul = [27/255,23/255,79/255]
