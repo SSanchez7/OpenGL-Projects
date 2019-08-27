@@ -60,7 +60,7 @@ def cerca():
 	cerca = sg.SceneGraphNode("carca")
 	for i in range (18):
 		palo = sg.SceneGraphNode("palo")
-		palo.transform = tr.matmul([tr.translate(0.08+0.11*i,-0.4,0), tr.scale(0.1,0.15,1), tr.rotationZ(90*np.pi/180)])
+		palo.transform = tr.matmul([tr.translate(-0.9+0.111*i,-0.4,0), tr.scale(0.1,0.15,1), tr.rotationZ(90*np.pi/180)])
 		palo.childs += [brownQuad]
 		cerca.childs += [palo]
 

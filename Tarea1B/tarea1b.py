@@ -19,7 +19,6 @@ class Controller:
         self.av3 = 0.0
         self.av4 = 0.0
         self.fillPolygon = True
-        self.shader_to_use = True
         self.theta = 0.0
         self.rotate = 0
         self.time = 0
@@ -56,8 +55,6 @@ def on_key(window, key, scancode, action, mods):
 
     if action != glfw.PRESS:
         return
-    elif key == glfw.KEY_SPACE:
-        controller.fillPolygon = not controller.fillPolygon
     elif key == glfw.KEY_1:
         controller.light = not controller.light
     elif key == glfw.KEY_2:
