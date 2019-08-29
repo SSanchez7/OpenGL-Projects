@@ -159,7 +159,7 @@ def main():
         rotationWheels = int(not controller.special)*controller.theta*1.3
 
         #MovsCar
-        sg.findNode(nuevaEscena, "sombra").transform = tr.matmul([tr.translate(-0.3,-0.35,0),tr.shearing(5,0,0,0,0,0),tr.scale(1.4,0.2,1),tr.uniformScale(specialScaleShadowLight)])
+        sg.findNode(nuevaEscena, "sombraPiso").transform = tr.matmul([tr.translate(-0.3,-0.35,0),tr.shearing(5,0,0,0,0,0),tr.scale(1.4,0.2,1),tr.uniformScale(specialScaleShadowLight)])
         sg.findNode(nuevaEscena, "luzPiso").transform = tr.matmul([tr.translate(2,int(not controller.light)*3-0.23,0), tr.scale(2,0.25,1), tr.uniformScale(specialScaleShadowLight)])
         sg.findNode(nuevaEscena, "carroceria").transform = tr.translate(0, specialTranslateCar , 0)
         sg.findNode(nuevaEscena, "pulso").transform = tr.translate(0, specialTranslatePulse, 0)

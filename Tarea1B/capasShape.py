@@ -15,43 +15,45 @@ def foco():
 	whiteQuad = es.toGPUShape(createMulticolorQuad([1,1,1],[0.9,0.9,0.9]))
 	greenQuad = es.toGPUShape(createMulticolorQuad([10/255,50/255,10/255],[10/255,50/255,10/255]))
 
+	#Crea cuerpo del foco
 	soporte = sg.SceneGraphNode("soporte")
 	soporte.transform = tr.matmul([tr.rotationZ(90*np.pi/180), tr.scale(1,0.04,1)])
 	soporte.childs += [blackQuad]
 	baseLuz = sg.SceneGraphNode("baseLuz")
 	baseLuz.transform = tr.matmul([tr.translate(0,0.5,0), tr.scale(0.2,-0.05,1)])
 	baseLuz.childs += [blackQuad]
-
 	luz = sg.SceneGraphNode("luzFoco")
 	luz.transform = tr.matmul([tr.translate(0, 0.47, 0), tr.scale(0.1, 0.025, 1)])
 	luz.childs += [whiteQuad]
+	focoSimple = sg.SceneGraphNode("focoSimple")
+	focoSimple.childs += [soporte]
+	focoSimple.childs += [baseLuz]
+	focoSimple.childs += [luz]
+
+	#Crea brillo y sombra generadas por el foco
 	brillo = sg.SceneGraphNode("brilloFoco")
 	brillo.transform = tr.matmul([tr.translate(0,-0.55,0), tr.scale(0.4,0.1,1)])
 	brillo.childs += [ash.circle(20,0.1,[62/255, 151/255, 62/255])]
-
 	sombraPoste = sg.SceneGraphNode("sombraPoste")
 	sombraPoste.transform = tr.matmul([tr.translate(-0.47,-0.57,0), tr.rotationZ(10*np.pi/180), tr.scale(1,0.04,1)])
 	sombraPoste.childs += [shadowQuad]
 	sombraBaseLuz = sg.SceneGraphNode("sombraBaseLuz")
 	sombraBaseLuz.transform = tr.matmul([tr.translate(-0.97,-0.67,0), tr.shearing(1,0,0,0,0,0), tr.rotationZ(-30*np.pi/180), tr.scale(0.27,-0.04,1)])
 	sombraBaseLuz.childs += [shadowQuad]
-
 	arregloSombra = sg.SceneGraphNode("arregloSombra1")
 	arregloSombra.transform = tr.matmul([tr.translate(-0.47,-0.57,0), tr.rotationZ(10*np.pi/180), tr.shearing(-4,0,0,0,0,0), tr.translate(0.2,0,0), tr.scale(0.57,0.04,1)])
 	arregloSombra.childs += [greenQuad]
+	sombraLuzFoco = sg.SceneGraphNode("sombraFoco")
+	sombraLuzFoco.childs += [brillo]
+	sombraLuzFoco.childs += [sombraPoste]
+	sombraLuzFoco.childs += [sombraBaseLuz]
+	sombraLuzFoco.childs += [arregloSombra]
 
-	sombraFoco = sg.SceneGraphNode("sombraFoco")
-	sombraFoco.childs += [sombraPoste]
-	sombraFoco.childs += [sombraBaseLuz]
-	sombraFoco.childs += [arregloSombra]
-
+	#Ensamblaje de foco
 	foco = sg.SceneGraphNode("foco")
-	foco.childs += [sombraFoco]
-	foco.childs += [brillo]
-	foco.childs += [soporte]
-	foco.childs += [baseLuz]
-	foco.childs += [luz]
-
+	foco.childs += [sombraLuzFoco]
+	foco.childs += [focoSimple]
+	
 	return foco
 
 def cerca():
