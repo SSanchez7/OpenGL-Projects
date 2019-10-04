@@ -9,6 +9,7 @@ import scene_graph as sg
 import easy_shaders as es
 from autoShape import *
 from capasShape import *
+import basic_shapes as bs
 
 
 ##VARIBABLS GLOBALES (CONTROLLER)##
@@ -55,6 +56,8 @@ def on_key(window, key, scancode, action, mods):
 
     if action != glfw.PRESS:
         return
+    elif key == glfw.KEY_SPACE:
+    	controller.fillPolygon = not controller.fillPolygon
     elif key == glfw.KEY_1:
         controller.light = not controller.light
     elif key == glfw.KEY_2:
@@ -70,8 +73,7 @@ def escena():
 					 mapa2(),
                      mapa3(),
 					 mapa4()])
-
-	#ParallaxEffectLayers
+    #ParallaxEffectLayers
 	escena = sg.SceneGraphNode("escena")
 	for i in range(len(mapa)):
 		firstNode = sg.SceneGraphNode("capa"+str(i+1))
@@ -85,7 +87,6 @@ def escena():
 
 	escena.childs += [vehiculo([87/255, 98/255, 112/255])]
 	escena.childs += [ave([0.9,0.9,0.9])]
-
 	return escena
 
 ##OPENGL MAIN##   
