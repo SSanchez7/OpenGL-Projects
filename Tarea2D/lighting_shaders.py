@@ -2,6 +2,8 @@
 """
 Daniel Calderon, CC3501, 2019-2
 Lighting Shaders
+
+v2 - Bug fixed: Textures were not binded
 """
 
 from OpenGL.GL import *
@@ -205,6 +207,7 @@ class SimpleTextureFlatShaderProgram():
         glBindVertexArray(shape.vao)
         glBindBuffer(GL_ARRAY_BUFFER, shape.vbo)
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, shape.ebo)
+        glBindTexture(GL_TEXTURE_2D, shape.texture)
 
         # 3d vertices + rgb color + 3d normals => 3*4 + 2*4 + 3*4 = 32 bytes
         position = glGetAttribLocation(self.shaderProgram, "position")
@@ -420,6 +423,7 @@ class SimpleTextureGouraudShaderProgram():
         glBindVertexArray(shape.vao)
         glBindBuffer(GL_ARRAY_BUFFER, shape.vbo)
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, shape.ebo)
+        glBindTexture(GL_TEXTURE_2D, shape.texture)
 
         # 3d vertices + rgb color + 3d normals => 3*4 + 2*4 + 3*4 = 32 bytes
         position = glGetAttribLocation(self.shaderProgram, "position")
@@ -644,6 +648,7 @@ class SimpleTexturePhongShaderProgram:
         glBindVertexArray(shape.vao)
         glBindBuffer(GL_ARRAY_BUFFER, shape.vbo)
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, shape.ebo)
+        glBindTexture(GL_TEXTURE_2D, shape.texture)
 
         # 3d vertices + 2d texture coordinates + 3d normals => 3*4 + 2*4 + 3*4 = 32 bytes
         position = glGetAttribLocation(self.shaderProgram, "position")
