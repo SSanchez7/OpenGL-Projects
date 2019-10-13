@@ -178,7 +178,7 @@ def estructura():
 	gpuQuadDark = es.toGPUShape(bs.createTextureNormalsCube("piedras.jpg"), GL_REPEAT, GL_NEAREST)
 	gpuQuadSemiDark = es.toGPUShape(bs.createTextureNormalsCube("marmol_semidark.jpg"), GL_REPEAT, GL_NEAREST)
 
-	pilar_=cilindro(10.5,1,3,image_filename="pilar.jpg")
+	pilar_=cilindro(10.5,1,10,image_filename="pilar.jpg")
 
 
 	base_pilar = sg.SceneGraphNode("base_pilar")

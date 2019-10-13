@@ -22,6 +22,7 @@ class Controller:
 		self.sol = True
 		self.rec = False
 		self.view = False
+		self.fileName = None
 
 controller = Controller()
 
@@ -35,7 +36,7 @@ def on_key(window, key, scancode, action, mods):
 		return
 	if key == glfw.KEY_ENTER:
 		controller.rec = not controller.rec
-		print("REC..." if controller.rec else "Saved video")
+		print("REC..." if controller.rec else "Saved video: {}".format(controller.fileName))
 	if key == glfw.KEY_1:
 		controller.sol = not controller.sol
 	elif key == glfw.KEY_ESCAPE:
@@ -87,25 +88,35 @@ if __name__  == "__main__":
 	if len(sys.argv)==2:
 		controller.view = True
 		text=sys.argv[1]
+		assert text[-4:]==".csv"
 		with open(text,"r") as file_:
 			l=int(len(file_.readlines())/2)
-			eyes = np.ndarray((l,3),dtype=float)
-			ats  = np.ndarray((l,3),dtype=float)
-			ups  = np.ndarray((l,3),dtype=float)
+			eyes = np.ndarray((l+2,3),dtype=float)
+			ats  = np.ndarray((l+2,3),dtype=float)
+			ups  = np.ndarray((l+2,3),dtype=float)
 			file_.seek(0)
 			g=csv.reader(file_)
 			k=0
 			for i in g:
 				if i!=[]:
+					if k==0:
+						eyes[k] = i[0:3]
+						ats[k]  = i[3:6]
+						ups[k]  = i[6:9]
+						k+=1
 					eyes[k] = i[0:3]
 					ats[k]  = i[3:6]
 					ups[k]  = i[6:9]
 					k+=1
-
+					if k==l+1:
+						eyes[k] = i[0:3]
+						ats[k]  = i[3:6]
+						ups[k]  = i[6:9]
+						break
 	n=20
 	eye_=catmull(n,eyes)
 	at_=catmull(n,ats)
-	up_=catmull(n,ups)				
+	up_=catmull(n,ups)	
 	
 	if not glfw.init():
 		sys.exit()
@@ -166,7 +177,7 @@ if __name__  == "__main__":
 
 		# Movimiento
 		if not controller.view:
-			step=0.5
+			step=0.25
 			if glfw.get_key(window, glfw.KEY_D) == glfw.PRESS:
 				controller.pos[0] += step*np.cos(-controller.alpha)
 				controller.pos[1] += step*np.sin(-controller.alpha)
@@ -212,7 +223,8 @@ if __name__  == "__main__":
 		#Rec
 		if controller.rec:
 			if file==None:
-				file = open(fileSinRepetir(),"w")
+				controller.fileName = fileSinRepetir()
+				file = open(controller.fileName,"w")
 				doc = csv.writer(file)
 			t+=dt
 			if t>=0.5:
