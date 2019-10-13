@@ -57,6 +57,7 @@ if __name__ == "__main__":
 	
 	# Assembling the shader program (pipeline) with both shaders
 	phongPipeline = ls.SimpleTexturePhongShaderProgram()
+	phongPipelineColor = ls.SimplePhongShaderProgram()
 
 	# Telling OpenGL to use our shader program
 	glUseProgram(phongPipeline.shaderProgram)
@@ -64,8 +65,8 @@ if __name__ == "__main__":
 	# Setting up the clear screen program
 	glClearColor(1, 1, 1, 1.0)
 
-	estructura = estructura("marmol3.jpg")
-	fondo_ = fondo("fondo.jpg")
+	estructura = estructura()
+	fondo_ = fondo([118/255,197/255,228/255])
 	suelo = suelo("suelo.jpg")
 
 	glEnable(GL_DEPTH_TEST)
@@ -131,9 +132,6 @@ if __name__ == "__main__":
 		if controller.sol:
 			controller.posSolX = 120 if controller.posSolX<-120 else controller.posSolX
 			controller.posSolX -= dt*8
-
-		print(controller.pos)
-			
 		
 		#Iluminacion
 		glUseProgram(phongPipeline.shaderProgram)
@@ -153,15 +151,20 @@ if __name__ == "__main__":
 			   (controller.posSolX)*(sunset-midday)/(-50-0)) + midday if controller.posSolX<0  and controller.posSolX>-50 else (
 		    (controller.posSolX+50)*(night-sunset)/(-70+50)) + sunset if controller.posSolX<-50 and controller.posSolX>-70 else night
 
+		night = np.array([0.0, 0.0, 0.0])
+		refl = ((controller.posSolX-70)*(dawn-night)/(50-70)) + night  if controller.posSolX<70 and controller.posSolX>50  else (
+			   (controller.posSolX-50)*(midday-dawn)/(0-50)) + dawn   if controller.posSolX<50 and controller.posSolX>0   else (
+			   (controller.posSolX)*(sunset-midday)/(-50-0)) + midday if controller.posSolX<0  and controller.posSolX>-50 else (
+		    (controller.posSolX+50)*(night-sunset)/(-70+50)) + sunset if controller.posSolX<-50 and controller.posSolX>-70 else night
+
+
 		glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "La"), luz[0], luz[1], luz[2])
-		glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Ld"), 1.0, 1.0, 1.0)
-		glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Ls"), 1.0, 1.0, 1.0)
+		glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Ld"), refl[0], refl[1], refl[2])
+		glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Ls"), refl[0], refl[1], refl[2])
 
 		glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Ka"), 0.5, 0.5, 0.3)
 		glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Kd"), 0.6, 0.6, 0.6)
 		glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Ks"), 0.3, 0.3, 0.3)
-
-		
 		
 		glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "lightPosition"), controller.posSolX, 0, 30)
 		glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "viewPosition"), eye[0], eye[1], eye[2])
@@ -177,18 +180,40 @@ if __name__ == "__main__":
 
 		sg.drawSceneGraphNode(estructura,phongPipeline,"model")
 
-		#Tono claro  1.0, 1.0, 1.0
-		#Tono oscuro 0.3, 0.3, 0.3
-		tono=((70-abs(controller.posSolX))*0.7/70)+0.3 if abs(controller.posSolX)<70 else 0.3
-
-		glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Ka"),tono, tono, tono) 
-		glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Kd"), 0.0, 0.0, 0.0)
-		glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Ks"), 0.0, 0.0, 0.0)
-		sg.drawSceneGraphNode(fondo_,phongPipeline,"model")
 		glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Ka"), 0.5, 0.5, 0.5)
 		glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Kd"), 0.9, 0.9, 0.9)
 		glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Ks"), 0.0, 0.0, 0.0)
+		
 		sg.drawSceneGraphNode(suelo,phongPipeline,"model")
+
+		glUseProgram(phongPipelineColor.shaderProgram)
+
+		#Tono claro  1.0, 1.0, 1.0
+		#Tono oscuro 0.3, 0.3, 0.3
+
+		tono=((70-abs(controller.posSolX))*0.7/70)+0.3 if abs(controller.posSolX)<70 else 0.3
+
+		glUniform3f(glGetUniformLocation(phongPipelineColor.shaderProgram, "Ka"),tono, tono, tono) 
+		glUniform3f(glGetUniformLocation(phongPipelineColor.shaderProgram, "Kd"), 0.0, 0.0, 0.0)
+		glUniform3f(glGetUniformLocation(phongPipelineColor.shaderProgram, "Ks"), 0.0, 0.0, 0.0)
+
+		glUniform3f(glGetUniformLocation(phongPipelineColor.shaderProgram, "La"), luz[0], luz[1], luz[2])
+		glUniform3f(glGetUniformLocation(phongPipelineColor.shaderProgram, "Ld"), refl[0], refl[1], refl[2])
+		glUniform3f(glGetUniformLocation(phongPipelineColor.shaderProgram, "Ls"), refl[0], refl[1], refl[2])
+		
+		glUniform3f(glGetUniformLocation(phongPipelineColor.shaderProgram, "lightPosition"), controller.posSolX, 0, 30)
+		glUniform3f(glGetUniformLocation(phongPipelineColor.shaderProgram, "viewPosition"), eye[0], eye[1], eye[2])
+		glUniform1ui(glGetUniformLocation(phongPipelineColor.shaderProgram, "shininess"), 100)
+
+		glUniform1f(glGetUniformLocation(phongPipelineColor.shaderProgram, "constantAttenuation"), 0.0001)
+		glUniform1f(glGetUniformLocation(phongPipelineColor.shaderProgram, "linearAttenuation"), 0.01)
+		glUniform1f(glGetUniformLocation(phongPipelineColor.shaderProgram, "quadraticAttenuation"), 0.001)
+
+		glUniformMatrix4fv(glGetUniformLocation(phongPipelineColor.shaderProgram, "projection"), 1, GL_TRUE, projection)
+		glUniformMatrix4fv(glGetUniformLocation(phongPipelineColor.shaderProgram, "view"), 1, GL_TRUE, normal_view)
+		glUniformMatrix4fv(glGetUniformLocation(phongPipelineColor.shaderProgram, "model"), 1, GL_TRUE, model)
+
+		sg.drawSceneGraphNode(fondo_,phongPipelineColor,"model")
 
 		glfw.swap_buffers(window)
 	glfw.terminate()

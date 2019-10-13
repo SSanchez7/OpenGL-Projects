@@ -11,6 +11,35 @@ def vertexUnpack3(vertex):
         vertex = vertex + (0,)
     return vertex
 
+def create4VertexColorNormal(p1, p2, p3, p4, r, g, b):
+
+    p1 = vertexUnpack3(p1)
+    p2 = vertexUnpack3(p2)
+    p3 = vertexUnpack3(p3)
+    p4 = vertexUnpack3(p4)
+
+    x1, y1, z1 = p1
+    x2, y2, z2 = p2
+    x3, y3, z3 = p3
+    x4, y4, z4 = p4
+
+    normal = _normal3(p3, p2, p1)
+    normal_x = normal.get_x()
+    normal_y = normal.get_y()
+    normal_z = normal.get_z()
+
+    vertices = np.array([
+        x1, y1, z1, r, g, b, normal_x, normal_y, normal_z,
+        x2, y2, z2, r, g, b, normal_x, normal_y, normal_z,
+        x3, y3, z3, r, g, b, normal_x, normal_y, normal_z,
+        x4, y4, z4, r, g, b, normal_x, normal_y, normal_z])
+
+    indices = np.array([
+        		0, 1, 2,
+        		2, 3, 0])
+
+    return bs.Shape(vertices, indices)
+
 def create4VertexTextureNormal(image_filename, p1, p2, p3, p4, nx=1, ny=1):
     p1 = vertexUnpack3(p1)
     p2 = vertexUnpack3(p2)
@@ -39,6 +68,7 @@ def create4VertexTextureNormal(image_filename, p1, p2, p3, p4, nx=1, ny=1):
     return bs.Shape(vertices, indices, image_filename)
 
 def createTriangleTextureNormal(image_filename, p1, p2, p3, nx=1, ny=1):
+
     x1, y1, z1 = p1
     x2, y2, z2 = p2
     x3, y3, z3 = p3
@@ -49,37 +79,38 @@ def createTriangleTextureNormal(image_filename, p1, p2, p3, nx=1, ny=1):
     normal_z = normal.get_z()
 
     vertices = np.array([
-		x1, y1, z1, (nx + ny) / 2, nx, normal_x, normal_y, normal_z,
+        x1, y1, z1, (nx + ny) / 2, nx, normal_x, normal_y, normal_z,
         x2, y2, z2, 0.0, 0.0, normal_x, normal_y, normal_z,
         x3, y3, z3, ny, 0.0, normal_x, normal_y, normal_z])
 
     indices = np.array([
-        	0, 1, 2])
+        		0, 1, 2])
 
     return bs.Shape(vertices, indices, image_filename)
 
-def pilar(image_filename,h,r,lat,lon):
-    dang = 2 * np.pi / lat
+def cilindro(h,r,N,image_filename=None,color=None):
+    dang = 2 * np.pi / N
+    a = [r*np.cos(0), r*np.sin(0), h]
+    b = [r*np.cos(dang), r*np.sin(dang), h]
+    c = [r*np.cos(dang), r*np.sin(dang), 0]
+    d = [r*np.cos(0), r*np.sin(0), 0]
+    shape = es.toGPUShape(create4VertexTextureNormal(image_filename, a, b, c, d), GL_REPEAT, GL_NEAREST) if image_filename != None and color==None else (
+    		es.toGPUShape(create4VertexColorNormal(a, b, c, d, color[0], color[1], color[2]), GL_REPEAT, GL_NEAREST))
     cylinder_shape = sg.SceneGraphNode("cylinder_shape")
-    for i in range(lon): 
-        for j in range(lat): 
-            ang = dang * j
-            a = [r * np.cos(ang), r * np.sin(ang), h / lon * (i + 1)]
-            b = [r * np.cos(ang + dang), r * np.sin(ang + dang), h / lon * (i + 1)]
-            c = [r * np.cos(ang + dang), r * np.sin(ang + dang), h / lon * i]
-            d = [r * np.cos(ang), r * np.sin(ang), h / lon * i]
-            shape = es.toGPUShape(create4VertexTextureNormal(image_filename, a, b, c, d), GL_REPEAT, GL_NEAREST)
-            aux = sg.SceneGraphNode("aux")
-            aux.childs += [shape]
-            cylinder_shape.childs += [aux]
+    for i in range(N): 
+        aux = sg.SceneGraphNode("aux")
+        aux.transform = tr.rotationZ(i*dang)
+        aux.childs += [shape]
+        cylinder_shape.childs += [aux]
     return 	cylinder_shape
 
 
 
 def techo(image_filename):
-	a=[19.5,-42,14.4];b=[19.5,42,14.4];c=[0,42,18.5];d=[0,-42,18.5];e=[0,-42,14.4];
-	gpuTriangle = es.toGPUShape(createTriangleTextureNormal(image_filename,a,d,e), GL_REPEAT, GL_NEAREST)
-	gpuQuad = es.toGPUShape(create4VertexTextureNormal(image_filename,a,b,c,d), GL_REPEAT, GL_NEAREST)
+	a=[19.5,-42,14.4];b=[19.5,42,14.4];c=[0,42,18.5];d=[0,-42,18.5];e=[0,-42,14.4];f=[-19.5,42,14.4];g=[-19.5,-42,14.4]
+	gpuTriangle = es.toGPUShape(createTriangleTextureNormal("marmol_semidark.jpg",d,a,e), GL_REPEAT, GL_NEAREST)
+	gpuQuad = es.toGPUShape(create4VertexTextureNormal(image_filename,a,d,c,b), GL_REPEAT, GL_NEAREST)
+	gpuQuad2 = es.toGPUShape(create4VertexTextureNormal(image_filename,a,b,f,g), GL_REPEAT, GL_NEAREST)
 
 	semi_techo_p1 = sg.SceneGraphNode("semi_techo_p1")
 	semi_techo_p1.childs += [gpuQuad]
@@ -88,7 +119,7 @@ def techo(image_filename):
 	semi_techo_p2_1.childs += [gpuTriangle]
 
 	semi_techo_p2_2 = sg.SceneGraphNode("semi_techo_p2_2")
-	semi_techo_p2_2.transform = tr.translate(0,84,0)
+	semi_techo_p2_2.transform = tr.matmul([tr.translate(0,0,0),tr.scale(1,-1,1)])
 	semi_techo_p2_2.childs += [gpuTriangle]
 
 	semi_techo_p2 = sg.SceneGraphNode("semi_techo_p2")
@@ -103,32 +134,37 @@ def techo(image_filename):
 	semi_techo_r.transform = tr.scale(-1,1,1)
 	semi_techo_r.childs += [semi_techo]
 
+	base = sg.SceneGraphNode("base")
+	base.childs += [gpuQuad2]
+
 	techo = sg.SceneGraphNode("techo")
 	techo.childs += [semi_techo]
 	techo.childs += [semi_techo_r]
+	techo.childs += [base]
 
 	return techo
 
 
-def estructura(image_filename):
-	gpuQuad = es.toGPUShape(bs.createTextureNormalsCube(image_filename), GL_REPEAT, GL_NEAREST)
-	pilar_=pilar(image_filename,12,1,4,1)
+def estructura():
+	gpuQuadDark = es.toGPUShape(bs.createTextureNormalsCube("marmol_dark.jpg"), GL_REPEAT, GL_NEAREST)
+	gpuQuadSemiDark = es.toGPUShape(bs.createTextureNormalsCube("marmol_semidark.jpg"), GL_REPEAT, GL_NEAREST)
+	pilar_=cilindro(12,1,10,image_filename="pilar.jpg")
 
 	centro = sg.SceneGraphNode("centro")
 	centro.transform = tr.matmul([tr.translate(0,0,6),tr.scale(25,60,12)])
-	centro.childs += [gpuQuad]
+	centro.childs += [gpuQuadDark]
 
 	base = sg.SceneGraphNode("base")
 	base.transform = tr.scale(39,84,1)
-	base.childs += [gpuQuad]
+	base.childs += [gpuQuadDark]
 
 	media = sg.SceneGraphNode("media")
 	media.transform = tr.matmul([tr.translate(0,0,13.5),tr.scale(37,82,2)])
-	media.childs += [gpuQuad]
+	media.childs += [gpuQuadDark]
 
 	tope = sg.SceneGraphNode("tope")
 	tope.transform = tr.matmul([tr.translate(0,0,12),tr.scale(39,84,1)])
-	tope.childs += [gpuQuad]
+	tope.childs += [gpuQuadSemiDark]
 
 
 	pilarFrente = sg.SceneGraphNode("pilarFrente")
@@ -164,17 +200,16 @@ def estructura(image_filename):
 	estructura.childs += [pilarAtras]
 	estructura.childs += [pilarDerecha]
 	estructura.childs += [pilarIzquierda]
-	estructura.childs += [techo(image_filename)]
+	estructura.childs += [techo("marmol.jpg")]
 	
 	return estructura
 
-def fondo(image_filename):
-	fondo_ = pilar(image_filename,30,50,10,1)
-	tapaCielo_ = es.toGPUShape(create4VertexTextureNormal(image_filename,[-50,50,30],[50,50,30],[50,-50,30],[-50,-50,30]), GL_REPEAT, GL_NEAREST)
+def fondo(color):
+	fondo_ = cilindro(30,50,10,color=color)
+	tapaCielo_ = es.toGPUShape(create4VertexColorNormal([-50,50,30],[50,50,30],[50,-50,30],[-50,-50,30],color[0],color[1],color[2]), GL_REPEAT, GL_NEAREST)
 
 	tapaCielo = sg.SceneGraphNode("tapaCielo")
 	tapaCielo.childs += [tapaCielo_]
-	
 
 	fondo = sg.SceneGraphNode("fondo")
 	fondo.childs += [fondo_]
