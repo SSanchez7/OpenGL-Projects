@@ -12,7 +12,6 @@ def vertexUnpack3(vertex):
     return vertex
 
 def create4VertexColorNormal(p1, p2, p3, p4, r, g, b):
-
     p1 = vertexUnpack3(p1)
     p2 = vertexUnpack3(p2)
     p3 = vertexUnpack3(p3)
@@ -68,7 +67,6 @@ def create4VertexTextureNormal(image_filename, p1, p2, p3, p4, nx=1, ny=1):
     return bs.Shape(vertices, indices, image_filename)
 
 def createTriangleTextureNormal(image_filename, p1, p2, p3, nx=1, ny=1):
-
     x1, y1, z1 = p1
     x2, y2, z2 = p2
     x3, y3, z3 = p3
@@ -109,8 +107,9 @@ def cilindro(h,r,N,image_filename=None,color=None):
 def techo(image_filename):
 	a=[19.5,-42,14.4];b=[19.5,42,14.4];c=[0,42,18.5];d=[0,-42,18.5];e=[0,-42,14.4];f=[-19.5,42,14.4];g=[-19.5,-42,14.4]
 	gpuTriangle = es.toGPUShape(createTriangleTextureNormal("marmol_semidark.jpg",d,a,e), GL_REPEAT, GL_NEAREST)
-	gpuQuad = es.toGPUShape(create4VertexTextureNormal(image_filename,a,d,c,b), GL_REPEAT, GL_NEAREST)
 	gpuQuad2 = es.toGPUShape(create4VertexTextureNormal(image_filename,a,b,f,g), GL_REPEAT, GL_NEAREST)
+	gpuQuad = es.toGPUShape(create4VertexTextureNormal(image_filename,a,d,c,b), GL_REPEAT, GL_NEAREST)
+	
 
 	semi_techo_p1 = sg.SceneGraphNode("semi_techo_p1")
 	semi_techo_p1.childs += [gpuQuad]
@@ -137,18 +136,64 @@ def techo(image_filename):
 	base = sg.SceneGraphNode("base")
 	base.childs += [gpuQuad2]
 
+	adornos = sg.SceneGraphNode("adornos")
+	for i in range(3):
+		for j in range(3):
+			capa = -41.5 if i==0 else 0 if i==1 else 41.5
+			pos = [-18.7,14.7] if j==0 else [0,18.5] if j==1 else [18.7,14.7]
+			translate = tr.translate(pos[0],capa,0.6+pos[1])
+			aux = sg.SceneGraphNode("aux")
+			aux.transform = translate
+			aux.childs += [adorno()]
+			adornos.childs += [aux]
+
 	techo = sg.SceneGraphNode("techo")
 	techo.childs += [semi_techo]
 	techo.childs += [semi_techo_r]
 	techo.childs += [base]
+	techo.childs += [adornos]
 
 	return techo
 
+def adorno():
+	gpuQuad = es.toGPUShape(bs.createTextureNormalsCube("marmol_semidark.jpg"), GL_REPEAT, GL_NEAREST)
+
+	base_adorno = sg.SceneGraphNode("base_adorno")
+	base_adorno.transform = tr.matmul([tr.translate(0.7,0,0),tr.scale(0.5,1,1)])
+	base_adorno.childs += [gpuQuad]
+
+	deco = sg.SceneGraphNode("deco")
+	deco.transform = tr.matmul([tr.rotationY(45*np.pi/180),tr.scale(1,0.2,1)])
+	deco.childs += [gpuQuad]
+
+	adorno = sg.SceneGraphNode("adorno")
+	adorno.transform = tr.matmul([tr.rotationY(90*np.pi/180),tr.uniformScale(0.9)])
+	adorno.childs += [base_adorno]
+	adorno.childs += [deco]
+
+	return adorno
+
 
 def estructura():
-	gpuQuadDark = es.toGPUShape(bs.createTextureNormalsCube("marmol_dark.jpg"), GL_REPEAT, GL_NEAREST)
+	gpuQuadDark = es.toGPUShape(bs.createTextureNormalsCube("piedras.jpg"), GL_REPEAT, GL_NEAREST)
 	gpuQuadSemiDark = es.toGPUShape(bs.createTextureNormalsCube("marmol_semidark.jpg"), GL_REPEAT, GL_NEAREST)
-	pilar_=cilindro(12,1,10,image_filename="pilar.jpg")
+
+	pilar_=cilindro(10.5,1,3,image_filename="pilar.jpg")
+
+
+	base_pilar = sg.SceneGraphNode("base_pilar")
+	base_pilar.transform = tr.scale(2.3,2.3,1)
+	base_pilar.childs += [gpuQuadSemiDark]
+
+	tope_pilar = sg.SceneGraphNode("base_pilar")
+	tope_pilar.transform = tr.matmul([tr.translate(0,0,10.5),tr.scale(2.3,2.3,0.7)])
+	tope_pilar.childs += [gpuQuadSemiDark]
+
+	pilar = sg.SceneGraphNode("pilar")
+	pilar.transform = tr.translate(0,0,1)
+	pilar.childs += [base_pilar]
+	pilar.childs += [tope_pilar]
+	pilar.childs += [pilar_]
 
 	centro = sg.SceneGraphNode("centro")
 	centro.transform = tr.matmul([tr.translate(0,0,6),tr.scale(25,60,12)])
@@ -156,7 +201,7 @@ def estructura():
 
 	base = sg.SceneGraphNode("base")
 	base.transform = tr.scale(39,84,1)
-	base.childs += [gpuQuadDark]
+	base.childs += [gpuQuadSemiDark]
 
 	media = sg.SceneGraphNode("media")
 	media.transform = tr.matmul([tr.translate(0,0,13.5),tr.scale(37,82,2)])
@@ -171,7 +216,7 @@ def estructura():
 	for i in range(8):
 		aux = sg.SceneGraphNode("aux")
 		aux.transform = tr.translate(16.5-4.715*i,-39,0)
-		aux.childs += [pilar_]
+		aux.childs += [pilar]
 		pilarFrente.childs += [aux]
 
 	pilarAtras = sg.SceneGraphNode("pilarAtras")
@@ -182,7 +227,7 @@ def estructura():
 	for i in range (15):
 		aux = sg.SceneGraphNode("aux")
 		aux.transform = tr.translate(16.5,34-4.85*i,0)
-		aux.childs += [pilar_]
+		aux.childs += [pilar]
 		pilarDerecha.childs += [aux]
 
 	pilarIzquierda = sg.SceneGraphNode("pilarIzquerda")

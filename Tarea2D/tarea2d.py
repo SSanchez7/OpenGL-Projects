@@ -7,6 +7,8 @@ from OpenGL.GL import *
 import numpy as np;
 import sys
 from Parthenon_shapes import *
+import csv
+import os.path
 
 INT_BYTE = 4
 
@@ -18,6 +20,9 @@ class Controller:
 		self.mousePos = (0.0, 0.0)
 		self.alpha = 0
 		self.sol = True
+		self.rec = False
+		self.view = False
+
 controller = Controller()
 
 def cursor_pos_callback(window, x, y):
@@ -29,16 +34,79 @@ def on_key(window, key, scancode, action, mods):
 	if action != glfw.PRESS:
 		return
 	if key == glfw.KEY_ENTER:
-		controller.fillPolygon = not controller.fillPolygon
-		print("Toggle GL_FILL/GL_LINE")
-	if key == glfw.KEY_I:
+		controller.rec = not controller.rec
+		print("REC..." if controller.rec else "Saved video")
+	if key == glfw.KEY_1:
 		controller.sol = not controller.sol
 	elif key == glfw.KEY_ESCAPE:
 		sys.exit()	
-	else:
-		print("Unknow key")
-			
-if __name__ == "__main__":
+	
+def fileSinRepetir():
+	v=0
+	s="camera0000.csv"
+	while os.path.exists(s):
+		v+=1
+		s="camera{}.csv".format("0"*(4-len(str(v)))+str(v))
+	return s
+
+def generateT(t):
+    return np.array([[1, t, t**2, t**3]]).T
+
+def catmullMatrix(P0, P1, P2, P3):
+    G = np.concatenate((P0, P1, P2, P3),axis=1)
+    Mc = np.array([[0,-1/2, 1,-1/2], 
+    			   [1, 0,-5/2, 3/2], 
+    			   [0, 1/2, 2,-3/2], 
+    			   [0, 0,-1/2, 1/2]])
+    return np.matmul(G, Mc)
+
+def evalCurve(M, N):
+    ts = np.linspace(0.0, 1.0, N)
+    curve = np.ndarray(shape=(N, 3), dtype=float) 
+    for i in range(len(ts)):
+       	T = generateT(ts[i])
+       	curve[i, 0:3] = np.matmul(M, T).T
+    return curve
+
+def catmull(N,V):
+	catmullCurve = []
+	for i in range(len(V)-3):
+		P0 = V[i][:,np.newaxis]
+		P1 = V[i+1][:,np.newaxis]
+		P2 = V[i+2][:,np.newaxis]
+		P3 = V[i+3][:,np.newaxis]
+		GCm = catmullMatrix(P0, P1, P2, P3)
+		curve = evalCurve(GCm, N)
+		for j in curve:
+			catmullCurve += [j]
+	return catmullCurve
+
+if __name__  == "__main__":
+
+	eyes=[];ats=[];ups=[]
+	if len(sys.argv)==2:
+		controller.view = True
+		text=sys.argv[1]
+		with open(text,"r") as file_:
+			l=int(len(file_.readlines())/2)
+			eyes = np.ndarray((l,3),dtype=float)
+			ats  = np.ndarray((l,3),dtype=float)
+			ups  = np.ndarray((l,3),dtype=float)
+			file_.seek(0)
+			g=csv.reader(file_)
+			k=0
+			for i in g:
+				if i!=[]:
+					eyes[k] = i[0:3]
+					ats[k]  = i[3:6]
+					ups[k]  = i[6:9]
+					k+=1
+
+	n=20
+	eye_=catmull(n,eyes)
+	at_=catmull(n,ats)
+	up_=catmull(n,ups)				
+	
 	if not glfw.init():
 		sys.exit()
 	width = 1366
@@ -67,7 +135,7 @@ if __name__ == "__main__":
 
 	estructura = estructura()
 	fondo_ = fondo([118/255,197/255,228/255])
-	suelo = suelo("suelo.jpg")
+	suelo = suelo("suelo2.jpg")
 
 	glEnable(GL_DEPTH_TEST)
 	# Our shapes here are always fully painted
@@ -77,7 +145,10 @@ if __name__ == "__main__":
 	projection = tr.perspective(45, float(width)/float(height), 0.1, 100)
 	model = tr.identity()
 
+	file=None
 	t0 = glfw.get_time()
+	t=0
+	k=0
 	while not glfw.window_should_close(window):
 		# Using GLFW to check for input events
 		glfw.poll_events()
@@ -94,40 +165,62 @@ if __name__ == "__main__":
 
 
 		# Movimiento
-		step=0.3
-		if glfw.get_key(window, glfw.KEY_D) == glfw.PRESS:
-			controller.pos[0] += step*np.cos(-controller.alpha)
-			controller.pos[1] += step*np.sin(-controller.alpha)
-		if glfw.get_key(window, glfw.KEY_A) == glfw.PRESS:
-			controller.pos[0] -= step*np.cos(-controller.alpha)
-			controller.pos[1] -= step*np.sin(-controller.alpha)
-		if glfw.get_key(window, glfw.KEY_W) == glfw.PRESS:
-			controller.pos[0] += step*np.sin(controller.alpha)
-			controller.pos[1] += step*np.cos(controller.alpha)
-		if glfw.get_key(window, glfw.KEY_S) == glfw.PRESS:
-			controller.pos[0] -= step*np.sin(controller.alpha)
-			controller.pos[1] -= step*np.cos(controller.alpha)
-		if glfw.get_key(window, glfw.KEY_LEFT_SHIFT) == glfw.PRESS:
-			controller.pos[2] -= step/3
-		if glfw.get_key(window, glfw.KEY_SPACE) == glfw.PRESS:
-			controller.pos[2] += step/3
+		if not controller.view:
+			step=0.5
+			if glfw.get_key(window, glfw.KEY_D) == glfw.PRESS:
+				controller.pos[0] += step*np.cos(-controller.alpha)
+				controller.pos[1] += step*np.sin(-controller.alpha)
+			if glfw.get_key(window, glfw.KEY_A) == glfw.PRESS:
+				controller.pos[0] -= step*np.cos(-controller.alpha)
+				controller.pos[1] -= step*np.sin(-controller.alpha)
+			if glfw.get_key(window, glfw.KEY_W) == glfw.PRESS:
+				controller.pos[0] += step*np.sin(controller.alpha)
+				controller.pos[1] += step*np.cos(controller.alpha)
+			if glfw.get_key(window, glfw.KEY_S) == glfw.PRESS:
+				controller.pos[0] -= step*np.sin(controller.alpha)
+				controller.pos[1] -= step*np.cos(controller.alpha)
+			if glfw.get_key(window, glfw.KEY_LEFT_SHIFT) == glfw.PRESS:
+				controller.pos[2] -= step/3
+			if glfw.get_key(window, glfw.KEY_SPACE) == glfw.PRESS:
+				controller.pos[2] += step/3			
 
 		# Clearing the screen in both, color and depth
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
 		# Vista-Camara
-		mousePosX = 2 * (controller.mousePos[0] - width/2) / width
-		controller.alpha = mousePosX*np.pi
+		normal_view = []
+		if not controller.view:
+			mousePosX = 2 * (controller.mousePos[0] - width/2) / width
+			controller.alpha = mousePosX*np.pi
+			mousePosX = np.sin(controller.alpha)
+			mousePosY = np.cos(controller.alpha)
+			mousePosZ = 2 * (height/2 - controller.mousePos[1]) / height
+			sense = 1
+			at  = np.array([controller.pos[0]+sense*mousePosX, controller.pos[1]+sense*mousePosY, controller.pos[2]+2*sense*mousePosZ]) #Listo
+			eye = np.array([controller.pos[0], controller.pos[1], controller.pos[2]])
+			up  = np.array([0,0,1])
+			normal_view = tr.lookAt(eye, at, up)
+		else:	
+			eye=eye_[k]
+			at=at_[k]
+			up=up_[k]
+			normal_view = tr.lookAt(eye, at, up)
+			if k<= len(eye_)-2:
+				k+=1
 
-		mousePosX = np.sin(controller.alpha)
-		mousePosY = np.cos(controller.alpha)
-		mousePosZ = 2 * (height/2 - controller.mousePos[1]) / height
 
-		sense = 1
-		at  = np.array([controller.pos[0]+sense*mousePosX, controller.pos[1]+sense*mousePosY, controller.pos[2]+2*sense*mousePosZ]) #Listo
-		eye = np.array([controller.pos[0], controller.pos[1], controller.pos[2]])
-		up  = np.array([0,0,1])
-		normal_view = tr.lookAt(eye, at, up)
+		#Rec
+		if controller.rec:
+			if file==None:
+				file = open(fileSinRepetir(),"w")
+				doc = csv.writer(file)
+			t+=dt
+			if t>=0.5:
+				doc.writerow([eye[0],eye[1],eye[2],at[0],at[1],at[2],up[0],up[1],up[2]])
+				t=0
+		if not controller.rec and file!=None:
+			file.close()
+			file=None
 
 		if controller.sol:
 			controller.posSolX = 120 if controller.posSolX<-120 else controller.posSolX
@@ -162,7 +255,7 @@ if __name__ == "__main__":
 		glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Ld"), refl[0], refl[1], refl[2])
 		glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Ls"), refl[0], refl[1], refl[2])
 
-		glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Ka"), 0.5, 0.5, 0.3)
+		glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Ka"), 0.5, 0.5, 0.35)
 		glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Kd"), 0.6, 0.6, 0.6)
 		glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Ks"), 0.3, 0.3, 0.3)
 		
@@ -180,7 +273,7 @@ if __name__ == "__main__":
 
 		sg.drawSceneGraphNode(estructura,phongPipeline,"model")
 
-		glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Ka"), 0.5, 0.5, 0.5)
+		glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Ka"), 0.3, 0.5, 0.3)
 		glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Kd"), 0.9, 0.9, 0.9)
 		glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Ks"), 0.0, 0.0, 0.0)
 		
