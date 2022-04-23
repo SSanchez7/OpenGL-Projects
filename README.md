@@ -16,7 +16,7 @@ Los movimientos de vuelo del ave y suspensión de la boya, son automáticos.
 
 ![image](https://user-images.githubusercontent.com/63082386/164948181-2a5fd7c1-f05d-44b7-b934-691c105a0ec4.png)
 
-## Tarea2D - 
+## Tarea2D - Visita virtual Partenón Atenas
 Para correr el programa ejecutar el archivo `/Tarea2D/tarea2d.py`. El programa es capaz de recibir como entrada y ejecutar una acción las siguientes teclas: 
 * W,A,S,D, encargadas de mover la cámara por el escenario
 * La tecla 1 que detiene o continua el avance del sol
