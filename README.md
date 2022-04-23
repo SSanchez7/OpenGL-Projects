@@ -5,8 +5,7 @@ OpenGL projects
 ## Tarea1B - Parallax
 ### Instrucciones de Ejecucion
 Para correr el programa ejecutar el archivo `/Tarea1B/tarea1b.py`. El programa es capaz de recibir como entrada y ejecutar una acción las siquientes teclas: 
-* Las flechas de posición izquierda y derecha, encargadas de “mover” el auto por el escenario (lo que realmente se
-mueve es el fondo)
+* Las flechas de posición izquierda y derecha, encargadas de “mover” el auto por el escenario
 * La tecla 1 que enciende o apaga la luz
 * La tecla 2 que genera el efecto especial (el auto comienza a levitar moviéndose más sinusoidalmente). 
 
